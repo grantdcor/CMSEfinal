@@ -1,0 +1,94 @@
+##Code was originally written in PyCharm since I didn't seem to have access to JupyterNotebook anymore, all three of the methods were originally done seperately but compiled here.
+
+import pandas as pd  #import in modules
+import statsmodels.api as sm
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, precision_score
+
+alzdata = pd.read_csv('simulated_gwas_data_v2.csv')
+X = alzdata.drop('Case', axis=1)  #load data
+y = alzdata['Case']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=100)  #prepares data to be split
+
+resultslist = []  #creates blank list
+for column in X_train.columns:  #make train and test columns
+    X_train_snp = sm.add_constant(X_train[[column]])
+    X_test_snp = sm.add_constant(X_test[[column]])
+    model = sm.Logit(y_train, X_train_snp)
+    result = model.fit(disp=0)
+
+    y_pred = (result.predict(X_test_snp) > 0.7).astype(int)  #make predictions from training and test data
+    accuracy = accuracy_score(y_test, y_pred)   #find accuracy and precision
+    precision = precision_score(y_test, y_pred)
+
+    resultslist.append({    #appends blank list to include the name of the SNP and its p-value
+        'SNP': column,
+        'P-value': result.pvalues[column], })
+
+fin_results = pd.DataFrame(resultslist)
+fin_results = fin_results.sort_values('P-value')  #sort p-values by which are most significant
+print(accuracy, precision)
+
+fin_results.to_csv(r'C:\Users\gcord\Desktop\cmse proj\logreg.csv', index=False)
+
+import pandas as pd  #import in modules
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, precision_score
+from sklearn.model_selection import train_test_split
+
+alzdata = pd.read_csv('simulated_gwas_data_v2.csv')
+X = alzdata.drop('Case', axis=1)
+y = alzdata['Case']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=50)  #divde data into test set
+
+ranfo = RandomForestClassifier(n_estimators=150, random_state=50)  #start ran forest with 150 trees and fit training data
+ranfo.fit(X_train, y_train)
+
+y_predic= ranfo.predict(X_test)   #predict alzheimer's or not on testing set
+accuracy = accuracy_score(y_test, y_predic)                      #find accuracy and precision
+precision = precision_score(y_test,y_predic)
+
+data_sig = pd.DataFrame(ranfo.feature_importances_, index=X_train.columns, columns=['Importance'])
+
+sort_rf = data_sig.sort_values(by='Importance', ascending=False) #how much does the variable decreases impurity of split
+print(sort_rf.to_string())
+print(precision, accuracy)  #find precision and accuracy
+sort_rf.to_csv(r'C:\Users\gcord\Desktop\cmse proj\ranford.csv', index=False)
+
+import pandas as pd  #import in modules
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, precision_score
+
+alzdata = pd.read_csv('simulated_gwas_data_v2.csv')
+X = alzdata.drop('Case', axis=1)  #load data
+y = alzdata['Case']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.6, random_state=50)  #prepares data to be split
+
+svmlearning = SVC(kernel='linear', probability=True)
+svmlearning.fit(X_train, y_train)  #sets up SVM
+
+rf_model = RandomForestClassifier(n_estimators=100, random_state=50)  #unused code to directly compare to SVM, Kept in to show though process
+rf_model.fit(X_train, y_train)  #again, went unused in my project
+
+y_pred_svm = svmlearning.predict(X_test)  #tries to find target variable on test set
+accuracy = accuracy_score(y_test, y_pred_svm)  #calculates a precision and accuracy score
+precision = precision_score(y_test, y_pred_svm)
+
+coef_svm = pd.DataFrame(svmlearning.coef_.flatten(), index=X_train.columns, columns=['Coefficient']) ##compiles coefficients which show significance for SVM
+
+coef_svm['Importance'] = coef_svm['Coefficient'].abs() / coef_svm['Coefficient'].abs().sum()  #for SVM coeffeicient give us importance
+del coef_svm['Coefficient']
+print(accuracy, precision)
+svm_importance = coef_svm.sort_values(by='Importance', ascending=False)
+svm_ordered = svm_importance.sort_values(by='Importance', ascending=False)
+print(svm_ordered)
+print(accuracy, precision)
+print(svm_ordered.to_string())
+coef_svm.to_csv(r'C:\Users\gcord\Desktop\cmse proj\machinelearn.csv', index=False)
+
+
+
