@@ -66,7 +66,7 @@ alzdata = pd.read_csv('simulated_gwas_data_v2.csv')
 X = alzdata.drop('Case', axis=1)  #load data
 y = alzdata['Case']
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.6, random_state=50)  #prepares data to be split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.6, random_state=100)  #prepares data to be split
 
 svmlearning = SVC(kernel='linear', probability=True)
 svmlearning.fit(X_train, y_train)  #sets up SVM
